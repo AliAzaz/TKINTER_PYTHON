@@ -2,22 +2,23 @@
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
+from tkinter.ttk import Progressbar
+from tkinter.filedialog import askopenfilename
+from tkinter import messagebox
+
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import wordnet
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from tkinter.filedialog import askopenfilename
 
 import xml.etree.ElementTree as ET
 import os
 
 # Note: tk or ttk has same functionality but the appearance is different
-
-
 window = Tk()
 window.title("NLP GUI")
-window.geometry("800x600")  # To add dimensions or setting window display size
+# window.geometry("800x600")  # To add dimensions or setting window display size
 
 '''
 # For label
@@ -36,7 +37,6 @@ tab3 = ttk.Frame(tab_control)
 tab_control.add(tab1, text="NLPGUI")
 tab_control.add(tab2, text="Processing File")
 tab_control.add(tab3, text="About")
-
 tab_control.pack(expand=1, fill='both')  # For displaying Tabs
 
 # **** For NLPGUI Tab ****
@@ -46,115 +46,14 @@ label2 = Label(tab2, text="Processing of File", padx=5, pady=5)
 label2.grid(row=0, column=0)
 label3 = Label(tab3, text="About", padx=5, pady=5)
 label3.grid(row=0, column=0)
+# **** Progress Bar widget
+progressBar = Progressbar(tab1, orient=HORIZONTAL, mode='determinate', length=200)
+progressBar.grid(column=1, row=0, sticky=W, padx=120, pady=10)
 
 
 # ********* FOR FUNCTIONS FOR NLP TAB1 **********
 
-
-# Tokens using NLTK
-def get_tokens():
-    raw_text = str(raw_text_entry.get())
-    new_text = nltk.word_tokenize(raw_text)
-    result = '\nTokens: {}'.format(new_text)
-    # For inserting into Display
-    tab1_display.insert(tk.END, result)
-
-
-def get_POS_tags():
-    raw_text = str(raw_text_entry.get())
-    new_text = nltk.word_tokenize(raw_text)
-    this_new_text = nltk.pos_tag(new_text)
-    result = '\nPOS tags: {}'.format(this_new_text)
-    # For inserting into Display
-    tab1_display.insert(tk.END, result)
-
-
-def stopwords_removal():
-    raw_text = str(raw_text_entry.get())
-    stop_words = set(stopwords.words("english"))
-    new_text = nltk.word_tokenize(raw_text)
-    filtered_txt = []
-    filtered_txt = [w for w in new_text if w not in stop_words]
-    result = '\nStopwords Removal: {}'.format(filtered_txt)
-    # For inserting into Display
-    tab1_display.insert(tk.END, result)
-
-    # Stopwords that exists in english corpus
-    # print(stop_words)
-
-
-# **** For Main NLP Tab1 ****
-l1 = Label(tab1, text="Text for Analysis", padx=5, pady=5, bg='#ffffff')
-l1.grid(row=1, column=0)
-
-raw_text_entry = StringVar()
-txtAnalysisArea = Entry(tab1, textvariable=raw_text_entry, width=50)
-txtAnalysisArea.grid(row=1, column=1)
-
-# For Adding Buttons in Tab1
-Button1 = Button(tab1, text='Tokenize', width=12, bg='skyblue', fg='#FFF',
-                 command=get_tokens)  # bg: background color, fg: fore ground color
-Button1.grid(row=4, column=0, padx=10, pady=10)
-
-Button2 = Button(tab1, text='POS Tagger', width=12, bg='skyblue', fg='#FFF',
-                 command=get_POS_tags)  # bg: background color, fg: fore ground color
-Button2.grid(row=4, column=1, padx=10, pady=10)
-
-Button3 = Button(tab1, text='Stopwords Removal', width=14, bg='skyblue', fg='#FFF',
-                 command=stopwords_removal)  # bg: background color, fg: fore ground color
-Button3.grid(row=4, column=2, padx=10, pady=10)
-
-Button4 = Button(tab1, text='Lemmatization', width=12, bg='darkblue',
-                 fg='#FFF')  # bg: background color, fg: fore ground color
-Button4.grid(row=5, column=0, padx=10, pady=10)
-
-Button5 = Button(tab1, text='Reset', width=12, bg='darkblue', fg='#FFF')  # bg: background color, fg: fore ground color
-Button5.grid(row=5, column=1, padx=10, pady=10)
-
-Button6 = Button(tab1, text='Clear Text', width=12, bg='darkblue',
-                 fg='#FFF')  # bg: background color, fg: fore ground color
-Button6.grid(row=5, column=2, padx=10, pady=10)
-
-# **** For Display Results on screen ****
-tab1_display = Text(tab1)
-# tab1_display.grid(row=7, column=0, columnspan=3, padx=5, pady=5)
-tab1_display.grid(row=6, column=0, columnspan=3, padx=10, pady=10)
-
-
-# **** Working for Files Input ****
-
-# *** functionality ***
-def selectFileFromPC():
-    Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-    filePath = askopenfilename(initialdir="/", title="Select file",
-                               filetypes=(("txt files", "*.txt"), ("xml files", "*.xml"),
-                                          ("pdf files", "*.pdf")))
-    filename = os.path.basename(filePath)
-    OpenDirectory.configure(text=filename)
-    if ".xml" in filename:
-        callingXMLWork(filePath)
-    elif ".txt" in filename:
-        callingTextWork(filePath)
-
-
-def callingXMLWork(file_path):
-    root = ET.parse(file_path).getroot()
-    wordsList = []
-    xmlParsing(wordsList, root.findall(root[1].tag))
-    print(listToString(wordsList))
-    txtAnalysisArea.delete(0, END)
-    txtAnalysisArea.insert(0, listToString(wordsList))
-
-
-def callingTextWork(file_path):
-    # opening file
-    root_file = open(file_path)
-    # Use this to read file content as a stream:
-    line = root_file.read()
-    txtAnalysisArea.delete(0, END)
-    txtAnalysisArea.insert(0, line)
-
-
+#  **** Supporting function's ****
 def listToString(s):
     # using list comprehension
     listToStr = ' '.join([str(elem) for elem in s])
@@ -169,9 +68,198 @@ def xmlParsing(list, subroot):
         list.append(subroot.text)
 
 
-# For Adding Open Directory Buttons
-OpenDirectory = Button(tab1, text='Open Directory', width=12, bg='skyblue', fg='#FFF',
-                       command=selectFileFromPC)  # bg: background color, fg: fore ground color
-OpenDirectory.grid(row=1, column=2, padx=10, pady=10)
+def txtResultEnableDisable(flag):
+    if flag == TRUE:
+        txtResultDisplay.config(state=NORMAL)
+    else:
+        txtResultDisplay.config(state=DISABLED)
 
-window.mainloop()
+
+def txtInsertInResultTextArea(result):
+    txtResultEnableDisable(TRUE)
+    txtResultDisplay.delete(1.0, END)
+    txtResultDisplay.insert(tk.END, result)
+    txtResultEnableDisable(FALSE)
+
+
+def progress(current_value):
+    progressBar["value"] = current_value
+
+
+def progressStarting():
+    currentValue = 0
+    progressBar["value"] = currentValue
+    progressBar["maximum"] = 100
+    divisions = 10
+    for i in range(divisions):
+        currentValue = currentValue + 10
+        progressBar.after(500, progress(currentValue))
+        progressBar.update()  # Force an update of the GUI
+    progressBar["value"] = 0
+
+
+# **** Supporting function's End ****
+
+# Tokens using NLTK
+def get_tokens():
+    if txtAnalysisArea.index("end") == 0:
+        messagebox.showinfo("Error", "Analysis Text field is empty!!")
+    else:
+        progressStarting()
+        raw_text = str(raw_text_entry.get())
+        new_text = nltk.word_tokenize(raw_text)
+        result = '\nTokens: {}'.format(new_text)
+        # For inserting into Display
+        txtInsertInResultTextArea(result)
+
+
+def get_POS_tags():
+    if txtAnalysisArea.index("end") == 0:
+        messagebox.showinfo("Error", "Analysis Text field is empty!!")
+    else:
+        progressStarting()
+        raw_text = str(raw_text_entry.get())
+        new_text = nltk.word_tokenize(raw_text)
+        this_new_text = nltk.pos_tag(new_text)
+        result = '\nPOS tags: {}'.format(this_new_text)
+        # For inserting into Display
+        txtInsertInResultTextArea(result)
+
+
+def stopwords_removal():
+    if txtAnalysisArea.index("end") == 0:
+        messagebox.showinfo("Error", "Analysis Text field is empty!!")
+    else:
+        progressStarting()
+        raw_text = str(raw_text_entry.get())
+        stop_words = set(stopwords.words("english"))
+        new_text = nltk.word_tokenize(raw_text)
+        filtered_txt = [w for w in new_text if w not in stop_words]
+        result = '\nStopwords Removal: {}'.format(filtered_txt)
+        # For inserting into Display
+        txtInsertInResultTextArea(result)
+
+
+def resetAllText():
+    txtAnalysisArea.delete(0, END)
+    txtResultEnableDisable(TRUE)
+    txtResultDisplay.delete(1.0, END)
+    txtResultEnableDisable(FALSE)
+    lblFileLabel.configure(text='')
+
+
+def clearTextResultDisplayArea():
+    txtResultEnableDisable(TRUE)
+    txtResultDisplay.delete(1.0, END)
+    txtResultEnableDisable(FALSE)
+
+
+# **** Working for Files Input Functionality****
+
+def selectFileFromPC():
+    Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
+    filePath = askopenfilename(initialdir="/", title="Select file",
+                               filetypes=(("txt files", "*.txt"), ("xml files", "*.xml"),
+                                          ("pdf files", "*.pdf")))
+    filename = os.path.basename(filePath)
+    lblFileLabel.configure(text="Filename:\n" + filename)
+    if ".xml" in filename:
+        callingXMLWork(filePath)
+    elif ".txt" in filename:
+        callingTextWork(filePath)
+
+
+def callingXMLWork(file_path):
+    progressStarting()
+    root = ET.parse(file_path).getroot()
+    wordsList = []
+    xmlParsing(wordsList, root.findall(root[1].tag))
+    print(listToString(wordsList))
+    txtAnalysisArea.delete(0, END)
+    txtAnalysisArea.insert(0, listToString(wordsList))
+
+
+def callingTextWork(file_path):
+    progressStarting()
+    # opening file
+    root_file = open(file_path)
+    # Use this to read file content as a stream:
+    line = root_file.read()
+    txtAnalysisArea.delete(0, END)
+    txtAnalysisArea.insert(0, line)
+
+
+# **** For Main NLP Tab1 ****
+
+l1 = Label(tab1, text="Text for Analysis", padx=10, pady=10, bg='#ffffff')
+l1.grid(row=1, column=0)
+
+raw_text_entry = StringVar()
+txtAnalysisArea = Entry(tab1, textvariable=raw_text_entry, width=60)
+txtAnalysisArea.grid(row=1, column=1)
+
+lblFileLabel = Label(tab1, text="", padx=0, pady=5, fg='darkblue')
+lblFileLabel.grid(row=1, column=3)
+
+# For Adding Open Directory Buttons
+btnOpenDirectory = Button(tab1, text='Open Directory', width=18, bg='skyblue', fg='#FFF',
+                          command=selectFileFromPC)  # bg: background color, fg: fore ground color
+btnOpenDirectory.grid(row=1, column=2, padx=10, pady=10)
+
+# For Adding Buttons in Tab1
+btnToken = Button(tab1, text='Tokenize', width=18, bg='skyblue', fg='#FFF',
+                  command=get_tokens)  # bg: background color, fg: fore ground color
+btnToken.grid(row=4, column=0, padx=10, pady=10)
+
+btnPOSTagger = Button(tab1, text='POS Tagger', width=18, bg='skyblue', fg='#FFF',
+                      command=get_POS_tags)  # bg: background color, fg: fore ground color
+btnPOSTagger.grid(row=4, column=1, padx=10, pady=10)
+
+bntStopWordRM = Button(tab1, text='Stopwords Removal', width=18, bg='skyblue', fg='#FFF',
+                       command=stopwords_removal)  # bg: background color, fg: fore ground color
+bntStopWordRM.grid(row=4, column=2, padx=10, pady=10)
+
+btnLemma = Button(tab1, text='Lemmatization', width=18, bg='darkblue',
+                  fg='#FFF')  # bg: background color, fg: fore ground color
+btnLemma.grid(row=5, column=0, padx=10, pady=10)
+
+btnReset = Button(tab1, text='Reset', width=18, bg='darkblue', fg='#FFF',
+                  command=resetAllText)  # bg: background color, fg: fore ground color
+btnReset.grid(row=5, column=1, padx=10, pady=10)
+
+btnClear = Button(tab1, text='Clear Text', width=18, bg='darkblue', fg='#FFF',
+                  command=clearTextResultDisplayArea)  # bg: background color, fg: fore ground color
+btnClear.grid(row=5, column=2, padx=10, pady=10)
+
+# **** For Display Results on screen ****
+txtResultDisplay = Text(tab1)
+txtResultDisplay.grid(row=6, column=0, columnspan=3, padx=10, pady=10)
+txtResultDisplay.config(state=DISABLED)
+
+
+# **** Full Screen Functionality ****
+class FullScreenWindow:
+    def __init__(self):
+        self.window = window
+        self.fullScreenState = False
+        self.window.attributes("-fullscreen", self.fullScreenState)
+
+        self.w, self.h = self.window.winfo_screenwidth(), self.window.winfo_screenheight()
+        self.window.geometry("%dx%d" % (self.w, self.h))
+
+        self.window.bind("<F11>", self.toggleFullScreen)
+        self.window.bind("<Escape>", self.quitFullScreen)
+
+        self.window.mainloop()
+
+    def toggleFullScreen(self, event):
+        self.fullScreenState = not self.fullScreenState
+        self.window.attributes("-fullscreen", self.fullScreenState)
+
+    def quitFullScreen(self, event):
+        self.fullScreenState = False
+        self.window.attributes("-fullscreen", self.fullScreenState)
+
+
+if __name__ == '__main__':
+    app = FullScreenWindow()
