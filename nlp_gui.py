@@ -1,23 +1,20 @@
 # Core Packages
+import os
 import tkinter as tk
+import xml.etree.ElementTree as ET
 from tkinter import *
-from tkinter import ttk
-from tkinter.ttk import Progressbar
-from tkinter.filedialog import askopenfilename
 from tkinter import messagebox
+from tkinter import ttk
+from tkinter.filedialog import askopenfilename
+from tkinter.scrolledtext import ScrolledText
+from tkinter.ttk import Progressbar
 
 import nltk
-from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.corpus import wordnet
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-
-import xml.etree.ElementTree as ET
-import os
 
 # Note: tk or ttk has same functionality but the appearance is different
 window = Tk()
-window.title("NLP GUI")
+window.title("NLP MINING")
 # window.geometry("800x600")  # To add dimensions or setting window display size
 
 '''
@@ -34,18 +31,20 @@ tab2 = ttk.Frame(tab_control)
 tab3 = ttk.Frame(tab_control)
 
 # **** For Adding Tabs to Notebook ****
-tab_control.add(tab1, text="NLPGUI")
-tab_control.add(tab2, text="Processing File")
 tab_control.add(tab3, text="About")
+tab_control.add(tab1, text="Text Analysis")
+tab_control.add(tab2, text="Processing Corpus")
 tab_control.pack(expand=1, fill='both')  # For displaying Tabs
 
 # **** For NLPGUI Tab ****
 label1 = Label(tab1, text="NLP for Simple text", padx=5, pady=5)  # padx and pady is used for padding
 label1.grid(row=0, column=0)
-label2 = Label(tab2, text="Processing of File", padx=5, pady=5)
+label2 = Label(tab2, text="Processing of Corpus", padx=5, pady=5)
 label2.grid(row=0, column=0)
-label3 = Label(tab3, text="About", padx=5, pady=5)
+label3 = Label(tab3, text="NATURAL LANGUAGE PROCESSING TOOL\nDEVELOPED BY KASHMALA & ALI AZAZ", padx=5, pady=5,
+               font='Helvetica 18 bold')
 label3.grid(row=0, column=0)
+label3.pack(expand=True)
 # **** Progress Bar widget
 progressBar = Progressbar(tab1, orient=HORIZONTAL, mode='determinate', length=200)
 progressBar.grid(column=1, row=0, sticky=W, padx=120, pady=10)
@@ -102,11 +101,11 @@ def progressStarting():
 
 # Tokens using NLTK
 def get_tokens():
-    if txtAnalysisArea.index("end") == 0:
+    if txtAnalysisArea.compare("end-1c", "==", "1.0"):
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
         progressStarting()
-        raw_text = str(raw_text_entry.get())
+        raw_text = str(getTextAreaData())
         new_text = nltk.word_tokenize(raw_text)
         result = '\nTokens: {}'.format(new_text)
         # For inserting into Display
@@ -114,11 +113,11 @@ def get_tokens():
 
 
 def get_POS_tags():
-    if txtAnalysisArea.index("end") == 0:
+    if txtAnalysisArea.compare("end-1c", "==", "1.0"):
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
         progressStarting()
-        raw_text = str(raw_text_entry.get())
+        raw_text = str(getTextAreaData())
         new_text = nltk.word_tokenize(raw_text)
         this_new_text = nltk.pos_tag(new_text)
         result = '\nPOS tags: {}'.format(this_new_text)
@@ -127,11 +126,11 @@ def get_POS_tags():
 
 
 def stopwords_removal():
-    if txtAnalysisArea.index("end") == 0:
+    if txtAnalysisArea.compare("end-1c", "==", "1.0"):
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
         progressStarting()
-        raw_text = str(raw_text_entry.get())
+        raw_text = str(getTextAreaData())
         stop_words = set(stopwords.words("english"))
         new_text = nltk.word_tokenize(raw_text)
         filtered_txt = [w for w in new_text if w not in stop_words]
@@ -141,7 +140,7 @@ def stopwords_removal():
 
 
 def resetAllText():
-    txtAnalysisArea.delete(0, END)
+    txtAnalysisArea.delete(0.0, END)
     txtResultEnableDisable(TRUE)
     txtResultDisplay.delete(1.0, END)
     txtResultEnableDisable(FALSE)
@@ -152,6 +151,10 @@ def clearTextResultDisplayArea():
     txtResultEnableDisable(TRUE)
     txtResultDisplay.delete(1.0, END)
     txtResultEnableDisable(FALSE)
+
+
+def getTextAreaData():
+    return txtAnalysisArea.get(0.0, tk.END)
 
 
 # **** Working for Files Input Functionality****
@@ -175,8 +178,8 @@ def callingXMLWork(file_path):
     wordsList = []
     xmlParsing(wordsList, root.findall(root[1].tag))
     print(listToString(wordsList))
-    txtAnalysisArea.delete(0, END)
-    txtAnalysisArea.insert(0, listToString(wordsList))
+    txtAnalysisArea.delete(0.0, END)
+    txtAnalysisArea.insert(0.0, listToString(wordsList))
 
 
 def callingTextWork(file_path):
@@ -185,17 +188,19 @@ def callingTextWork(file_path):
     root_file = open(file_path)
     # Use this to read file content as a stream:
     line = root_file.read()
-    txtAnalysisArea.delete(0, END)
-    txtAnalysisArea.insert(0, line)
+    txtAnalysisArea.delete(0.0, END)
+    txtAnalysisArea.insert(0.0, line)
 
 
 # **** For Main NLP Tab1 ****
 
 l1 = Label(tab1, text="Text for Analysis", padx=10, pady=10, bg='#ffffff')
 l1.grid(row=1, column=0)
+l2 = Label(tab1, text="Analysis Result\nScroll it through trackball", padx=10, pady=10, bg='#ffffff')
+l2.grid(row=6, column=0)
 
-raw_text_entry = StringVar()
-txtAnalysisArea = Entry(tab1, textvariable=raw_text_entry, width=60)
+# raw_text_entry = StringVar()
+txtAnalysisArea = ScrolledText(tab1, height=6)
 txtAnalysisArea.grid(row=1, column=1)
 
 lblFileLabel = Label(tab1, text="", padx=0, pady=5, fg='darkblue')
