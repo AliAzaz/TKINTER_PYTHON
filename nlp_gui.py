@@ -1,5 +1,7 @@
 # Core Packages
 import os
+import threading
+import time
 import tkinter as tk
 import xml.etree.ElementTree as ET
 # NLP Packages for lemmatization
@@ -11,8 +13,10 @@ from tkinter.filedialog import askopenfilename
 from tkinter.scrolledtext import ScrolledText
 from tkinter.ttk import Progressbar
 
+import PyPDF2
 import nltk
 import numpy as np
+from nltk import word_tokenize
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet  # To get words in dictionary with their parts of speech
 from nltk.stem import WordNetLemmatizer  # lemmatizes word based on it's parts of speech
@@ -73,6 +77,13 @@ def txtResultEnableDisable(flag):
         txtResultDisplay.config(state=DISABLED)
 
 
+def txtCorpusResultEnableDisable(flag):
+    if flag == TRUE:
+        c_txtResultDisplay.config(state=NORMAL)
+    else:
+        c_txtResultDisplay.config(state=DISABLED)
+
+
 def txtInsertInResultTextArea(result):
     txtResultEnableDisable(TRUE)
     txtResultDisplay.delete(0.0, END)
@@ -80,20 +91,27 @@ def txtInsertInResultTextArea(result):
     txtResultEnableDisable(FALSE)
 
 
-def progress(current_value):
-    analysisProgressBar["value"] = current_value
+def txtInsertInCorpusResultTextArea(result):
+    txtCorpusResultEnableDisable(TRUE)
+    c_txtResultDisplay.delete(0.0, END)
+    c_txtResultDisplay.insert(tk.END, result)
+    txtCorpusResultEnableDisable(FALSE)
 
 
-def progressStarting():
+def progress(current_value, progress_bar):
+    progress_bar["value"] = current_value
+
+
+def progressStarting(progress_bar):
     currentValue = 0
-    analysisProgressBar["value"] = currentValue
-    analysisProgressBar["maximum"] = 100
+    progress_bar["value"] = currentValue
+    progress_bar["maximum"] = 100
     divisions = 10
     for i in range(divisions):
         currentValue = currentValue + 10
-        analysisProgressBar.after(500, progress(currentValue))
-        analysisProgressBar.update()  # Force an update of the GUI
-    analysisProgressBar["value"] = 0
+        progress_bar.after(500, progress(currentValue, progress_bar))
+        progress_bar.update()  # Force an update of the GUI
+    progress_bar["value"] = 0
 
 
 # ***** Lemmatization functions
@@ -123,6 +141,22 @@ def get_stop_word_filter_text():
     return filtered_txt
 
 
+def getTextAreaData():
+    return txtAnalysisArea.get(0.0, tk.END)
+
+
+def writeFile(filename, data):
+    filename = filename.replace("\t", "")
+    str_filename = filename.split(".")[0].replace(" ", "") + ".txt"
+    if os.path.isfile(str_filename):
+        messagebox.showinfo("Error", "File already exist.\nDelete it manually!!")
+        return
+    file = open(str_filename, 'a+')
+    file.write(data + '\n')
+    file.close()
+    messagebox.showinfo("Done", "Successfully saved file in Corpus")
+
+
 # **** Supporting function's End ****
 
 # Tokens using NLTK
@@ -130,7 +164,7 @@ def run_tokenize():
     if txtAnalysisArea.compare("end-1c", "==", "1.0"):
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
-        progressStarting()
+        progressStarting(analysisProgressBar)
         raw_text = str(getTextAreaData())
         new_text = nltk.word_tokenize(raw_text.lower())
         result = '\nTokens: {}'.format(new_text)
@@ -142,7 +176,7 @@ def run_pos_tags():
     if txtAnalysisArea.compare("end-1c", "==", "1.0"):
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
-        progressStarting()
+        progressStarting(analysisProgressBar)
         raw_text = str(getTextAreaData())
         new_text = nltk.word_tokenize(raw_text.lower())
         this_new_text = nltk.pos_tag(new_text)
@@ -155,7 +189,7 @@ def run_stopwords_removal():
     if txtAnalysisArea.compare("end-1c", "==", "1.0"):
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
-        progressStarting()
+        progressStarting(analysisProgressBar)
         result = '\nStopwords Removal: {}'.format(get_stop_word_filter_text())
         # For inserting into Display
         txtInsertInResultTextArea(result)
@@ -165,7 +199,7 @@ def run_lemmatize():
     if txtAnalysisArea.compare("end-1c", "==", "1.0"):
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
-        progressStarting()
+        progressStarting(analysisProgressBar)
         words = get_stop_word_filter_text()
         wnl = WordNetLemmatizer()
         lematized_text = [wnl.lemmatize(word, get_pos(word)) for word in words]
@@ -188,8 +222,15 @@ def clearTextResultDisplayArea():
     txtResultEnableDisable(FALSE)
 
 
-def getTextAreaData():
-    return txtAnalysisArea.get(0.0, tk.END)
+def run_save_corpus():
+    if c_txtResultDisplay.compare("end-1c", "==", "1.0"):
+        messagebox.showinfo("Error", "Analysis Text field is empty!!")
+    else:
+        progressStarting(corpusProgressBar)
+        time.sleep(2)
+        file_name = c_lblFileLabel['text'].split(":")
+        print(file_name)
+        threading.Thread(target=writeFile(file_name[1], c_txtResultDisplay.get(0.0, tk.END))).start()
 
 
 # **** Working for Files Input Functionality****
@@ -197,14 +238,13 @@ def getTextAreaData():
 def selectAnalysisFileFromPC():
     Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
     filePath = askopenfilename(initialdir="/", title="Select file",
-                               filetypes=(("txt files", "*.txt"), ("xml files", "*.xml"),
-                                          ("pdf files", "*.pdf")))
+                               filetypes=(("txt files", "*.txt"), ("xml files", "*.xml")))
     filename = os.path.basename(filePath)
     lblFileLabel.configure(text="Filename:\n" + filename)
     if ".xml" in filename:
         callingXMLWork(filePath)
     elif ".txt" in filename:
-        callingTextWork(filePath)
+        callingTextWork(filePath, 1)
 
 
 def selectCorpusFileFromPC():
@@ -214,13 +254,12 @@ def selectCorpusFileFromPC():
     filename = os.path.basename(filePath)
     c_lblFileLabel.configure(text="Filename:\t" + filename)
     if ".pdf" in filename:
-        callingXMLWork(filePath)
+        threading.Thread(target=callingPDFWork(filePath)).start()
     elif ".txt" in filename:
-        callingTextWork(filePath)
+        threading.Thread(target=callingTextWork(filePath, 2)).start()
 
 
 def callingXMLWork(file_path):
-    progressStarting()
     root = ET.parse(file_path).getroot()
     wordsList = []
     xmlParsing(wordsList, root.findall(root[1].tag))
@@ -229,14 +268,41 @@ def callingXMLWork(file_path):
     txtAnalysisArea.insert(0.0, listToString(wordsList))
 
 
-def callingTextWork(file_path):
-    progressStarting()
+def callingTextWork(file_path, tab_type):
+    progressStarting(corpusProgressBar)
+    time.sleep(2)
     # opening file
     root_file = open(file_path)
     # Use this to read file content as a stream:
     line = root_file.read()
-    txtAnalysisArea.delete(0.0, END)
-    txtAnalysisArea.insert(0.0, line)
+    if tab_type == 1:
+        txtAnalysisArea.delete(0.0, END)
+        txtAnalysisArea.insert(0.0, line)
+    else:
+        txtInsertInCorpusResultTextArea(line)
+
+
+def callingPDFWork(file_path):
+    progressStarting(corpusProgressBar)
+    time.sleep(2)
+    pdfFileObj = open(file_path, "rb")
+    pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
+    mytext = ""
+    keywords = []
+    for pageNum in range(pdfReader.numPages):
+        pageObj = pdfReader.getPage(pageNum)
+        mytext += pageObj.extractText()
+        # The word_tokenize() function will break our text phrases into individual words.
+        tokens = word_tokenize(mytext)
+        # We'll create a new list that contains punctuation we wish to clean.
+        punctuations = ['(', ')', ';', ':', '[', ']', ',']
+        # We initialize the stopwords variable, which is a list of words like "The," "I," "and," etc. that don't hold much value as keywords.
+        stop_words = stopwords.words('english')
+        # We create a list comprehension that only returns a list of words that are NOT IN stop_words and NOT IN punctuations.
+        keywords = [word for word in tokens if not word in stop_words and not word in punctuations]
+    result = '\nWords: {}'.format(listToString(keywords))
+    txtInsertInCorpusResultTextArea(result)
+    pdfFileObj.close()
 
 
 # **** For Main NLP ANALYSIS_TAB ****
@@ -292,7 +358,7 @@ txtResultDisplay.config(state=DISABLED)
 # **** For Main NLP Tab2 ****
 c_l1 = Label(tab_corpus, text="Select file for Corpus", padx=20, pady=20, bg='#ffffff')
 c_l1.grid(row=1, column=0)
-c_l2 = Label(tab_corpus, text="Analysis Result\nScroll it through trackball", padx=20, pady=20, bg='#ffffff')
+c_l2 = Label(tab_corpus, text="Extracted words from file\nScroll it through trackball", padx=20, pady=20, bg='#ffffff')
 c_l2.grid(row=6, column=0)
 
 c_lblFileLabel = Label(tab_corpus, text="Filename:", padx=0, pady=5, fg='white', bg="lightgray", width=80)
@@ -305,11 +371,11 @@ c_btnOpenDirectory.grid(row=1, column=2, padx=10, pady=10)
 
 # For Adding Save Corpus Button
 c_btnOpenDirectory = Button(tab_corpus, text='Save in Corpus', width=18, bg='black', fg='white',
-                            command=selectCorpusFileFromPC)
+                            command=run_save_corpus)
 c_btnOpenDirectory.grid(row=6, column=2, padx=10, pady=10)
 
 # **** For Display wordlist on box ****
-c_txtResultDisplay = ScrolledText(tab_corpus, height=25, width=80)
+c_txtResultDisplay = ScrolledText(tab_corpus, height=30)
 c_txtResultDisplay.grid(row=6, column=1, padx=10, pady=10)
 c_txtResultDisplay.config(state=DISABLED)
 
