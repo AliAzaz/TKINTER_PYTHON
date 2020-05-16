@@ -56,12 +56,12 @@ def listToString(s):
     return listToStr
 
 
-def xmlParsing(list, subroot):
+def xmlParsing(sublist, subroot):
     if len(subroot):
         for subchild in subroot:
-            xmlParsing(list, subchild)
+            xmlParsing(sublist, subchild)
     else:
-        list.append(subroot.text)
+        sublist.append(subroot.text)
 
 
 def txtResultEnableDisable(flag):
