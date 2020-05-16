@@ -2,6 +2,8 @@
 import os
 import tkinter as tk
 import xml.etree.ElementTree as ET
+# NLP Packages for lemmatization
+from collections import Counter
 from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
@@ -10,21 +12,16 @@ from tkinter.scrolledtext import ScrolledText
 from tkinter.ttk import Progressbar
 
 import nltk
+import numpy as np
 from nltk.corpus import stopwords
+from nltk.corpus import wordnet  # To get words in dictionary with their parts of speech
+from nltk.stem import WordNetLemmatizer  # lemmatizes word based on it's parts of speech
 
 # Note: tk or ttk has same functionality but the appearance is different
 window = Tk()
 window.title("NLP MINING")
-# window.geometry("800x600")  # To add dimensions or setting window display size
 
-'''
-# For label
-label1 = Label(window, text="NLPGUI")
-label1.grid(row=0, column=1)  # In order to set row and column
-'''
 # **** For Tab Layout ****
-# Note:A ttk.Notebook widget manages a collection of windows and displays a single one at a time. Each slave window is associated with a tab, which the user may select to change the currently-displayed window.
-# Note: A ttk.frame widget is a container, used to group other widgets together.
 tab_control = ttk.Notebook(window)
 tab1 = ttk.Frame(tab_control)
 tab2 = ttk.Frame(tab_control)
@@ -76,7 +73,7 @@ def txtResultEnableDisable(flag):
 
 def txtInsertInResultTextArea(result):
     txtResultEnableDisable(TRUE)
-    txtResultDisplay.delete(1.0, END)
+    txtResultDisplay.delete(0.0, END)
     txtResultDisplay.insert(tk.END, result)
     txtResultEnableDisable(FALSE)
 
@@ -97,44 +94,81 @@ def progressStarting():
     progressBar["value"] = 0
 
 
+# ***** Lemmitization functions
+def get_pos(word):
+    w_synsets = wordnet.synsets(word)
+
+    pos_counts = Counter()
+    pos_counts["n"] = len([item for item in w_synsets if item.pos() == "n"])
+    pos_counts["v"] = len([item for item in w_synsets if item.pos() == "v"])
+    pos_counts["a"] = len([item for item in w_synsets if item.pos() == "a"])
+    pos_counts["r"] = len([item for item in w_synsets if item.pos() == "r"])
+
+    most_common_pos_list = pos_counts.most_common(3)
+    # first indexer for getting the top POS from list, second indexer for getting POS from tuple( POS: count )
+    return most_common_pos_list[0][0]
+
+
+# **** Stop Word removal
+def get_stop_word_filter_text():
+    raw_text = str(getTextAreaData())
+    stop_words = set(stopwords.words("english"))
+    new_text = nltk.word_tokenize(raw_text.lower())
+    filtered_txt = []
+    filtered_txt = [w for w in new_text if w not in stop_words]
+    symbols = "!\"#$%&()*+-./:;<=>?@[\]^_`{|}~\n"
+    for i in symbols:
+        filtered_txt = np.char.replace(filtered_txt, i, ' ')
+    return filtered_txt
+
+
 # **** Supporting function's End ****
 
 # Tokens using NLTK
-def get_tokens():
+def run_tokenize():
     if txtAnalysisArea.compare("end-1c", "==", "1.0"):
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
         progressStarting()
         raw_text = str(getTextAreaData())
-        new_text = nltk.word_tokenize(raw_text)
+        new_text = nltk.word_tokenize(raw_text.lower())
         result = '\nTokens: {}'.format(new_text)
         # For inserting into Display
         txtInsertInResultTextArea(result)
 
 
-def get_POS_tags():
+def run_pos_tags():
     if txtAnalysisArea.compare("end-1c", "==", "1.0"):
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
         progressStarting()
         raw_text = str(getTextAreaData())
-        new_text = nltk.word_tokenize(raw_text)
+        new_text = nltk.word_tokenize(raw_text.lower())
         this_new_text = nltk.pos_tag(new_text)
         result = '\nPOS tags: {}'.format(this_new_text)
         # For inserting into Display
         txtInsertInResultTextArea(result)
 
 
-def stopwords_removal():
+def run_stopwords_removal():
     if txtAnalysisArea.compare("end-1c", "==", "1.0"):
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
         progressStarting()
-        raw_text = str(getTextAreaData())
-        stop_words = set(stopwords.words("english"))
-        new_text = nltk.word_tokenize(raw_text)
-        filtered_txt = [w for w in new_text if w not in stop_words]
-        result = '\nStopwords Removal: {}'.format(filtered_txt)
+        result = '\nStopwords Removal: {}'.format(get_stop_word_filter_text())
+        # For inserting into Display
+        txtInsertInResultTextArea(result)
+
+
+def run_lemmatize():
+    if txtAnalysisArea.compare("end-1c", "==", "1.0"):
+        messagebox.showinfo("Error", "Analysis Text field is empty!!")
+    else:
+        progressStarting()
+        words = get_stop_word_filter_text()
+        wnl = WordNetLemmatizer()
+        lematized_text = [wnl.lemmatize(word, get_pos(word)) for word in words]
+        result = '\nLemmatiztion: {}'.format(lematized_text)
         # For inserting into Display
         txtInsertInResultTextArea(result)
 
@@ -142,14 +176,14 @@ def stopwords_removal():
 def resetAllText():
     txtAnalysisArea.delete(0.0, END)
     txtResultEnableDisable(TRUE)
-    txtResultDisplay.delete(1.0, END)
+    txtResultDisplay.delete(0.0, END)
     txtResultEnableDisable(FALSE)
     lblFileLabel.configure(text='')
 
 
 def clearTextResultDisplayArea():
     txtResultEnableDisable(TRUE)
-    txtResultDisplay.delete(1.0, END)
+    txtResultDisplay.delete(0.0, END)
     txtResultEnableDisable(FALSE)
 
 
@@ -213,19 +247,19 @@ btnOpenDirectory.grid(row=1, column=2, padx=10, pady=10)
 
 # For Adding Buttons in Tab1
 btnToken = Button(tab1, text='Tokenize', width=18, bg='skyblue', fg='#FFF',
-                  command=get_tokens)  # bg: background color, fg: fore ground color
+                  command=run_tokenize)  # bg: background color, fg: fore ground color
 btnToken.grid(row=4, column=0, padx=10, pady=10)
 
 btnPOSTagger = Button(tab1, text='POS Tagger', width=18, bg='skyblue', fg='#FFF',
-                      command=get_POS_tags)  # bg: background color, fg: fore ground color
+                      command=run_pos_tags)  # bg: background color, fg: fore ground color
 btnPOSTagger.grid(row=4, column=1, padx=10, pady=10)
 
 bntStopWordRM = Button(tab1, text='Stopwords Removal', width=18, bg='skyblue', fg='#FFF',
-                       command=stopwords_removal)  # bg: background color, fg: fore ground color
+                       command=run_stopwords_removal)  # bg: background color, fg: fore ground color
 bntStopWordRM.grid(row=4, column=2, padx=10, pady=10)
 
-btnLemma = Button(tab1, text='Lemmatization', width=18, bg='darkblue',
-                  fg='#FFF')  # bg: background color, fg: fore ground color
+btnLemma = Button(tab1, text='Lemmatization', width=18, bg='darkblue', fg='#FFF',
+                  command=run_lemmatize)  # bg: background color, fg: fore ground color
 btnLemma.grid(row=5, column=0, padx=10, pady=10)
 
 btnReset = Button(tab1, text='Reset', width=18, bg='darkblue', fg='#FFF',
@@ -237,7 +271,7 @@ btnClear = Button(tab1, text='Clear Text', width=18, bg='darkblue', fg='#FFF',
 btnClear.grid(row=5, column=2, padx=10, pady=10)
 
 # **** For Display Results on screen ****
-txtResultDisplay = Text(tab1)
+txtResultDisplay = ScrolledText(tab1, height=25)
 txtResultDisplay.grid(row=6, column=0, columnspan=3, padx=10, pady=10)
 txtResultDisplay.config(state=DISABLED)
 
