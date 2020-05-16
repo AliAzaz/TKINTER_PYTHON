@@ -36,18 +36,20 @@ tab_control.pack(expand=1, fill='both')  # For displaying Tabs
 # **** For NLPGUI Tab ****
 label1 = Label(tab_analysis, text="NLP for Simple text", padx=5, pady=5)  # padx and pady is used for padding
 label1.grid(row=0, column=0)
-label2 = Label(tab_corpus, text="Processing of Corpus", padx=5, pady=5)
+label2 = Label(tab_corpus, text="Processing of Corpus", padx=20, pady=10)
 label2.grid(row=0, column=0)
 label3 = Label(tab_about, text="NATURAL LANGUAGE PROCESSING TOOL\nDEVELOPED BY KASHMALA & ALI AZAZ", padx=5, pady=5,
                font='Helvetica 18 bold')
 label3.grid(row=0, column=0)
 label3.pack(expand=True)
 # **** Progress Bar widget
-progressBar = Progressbar(tab_analysis, orient=HORIZONTAL, mode='determinate', length=200)
-progressBar.grid(column=1, row=0, sticky=W, padx=120, pady=10)
+analysisProgressBar = Progressbar(tab_analysis, orient=HORIZONTAL, mode='determinate', length=200)
+analysisProgressBar.grid(column=1, row=0, sticky=W, padx=120, pady=10)
+corpusProgressBar = Progressbar(tab_corpus, orient=HORIZONTAL, mode='determinate', length=200)
+corpusProgressBar.grid(column=1, row=0, sticky=W, padx=250, pady=10)
 
 
-# ********* FOR FUNCTIONS FOR NLP TAB1 **********
+# ********* FOR FUNCTIONS FOR NLP TABs **********
 
 #  **** Supporting function's ****
 def listToString(s):
@@ -79,22 +81,22 @@ def txtInsertInResultTextArea(result):
 
 
 def progress(current_value):
-    progressBar["value"] = current_value
+    analysisProgressBar["value"] = current_value
 
 
 def progressStarting():
     currentValue = 0
-    progressBar["value"] = currentValue
-    progressBar["maximum"] = 100
+    analysisProgressBar["value"] = currentValue
+    analysisProgressBar["maximum"] = 100
     divisions = 10
     for i in range(divisions):
         currentValue = currentValue + 10
-        progressBar.after(500, progress(currentValue))
-        progressBar.update()  # Force an update of the GUI
-    progressBar["value"] = 0
+        analysisProgressBar.after(500, progress(currentValue))
+        analysisProgressBar.update()  # Force an update of the GUI
+    analysisProgressBar["value"] = 0
 
 
-# ***** Lemmitization functions
+# ***** Lemmatization functions
 def get_pos(word):
     w_synsets = wordnet.synsets(word)
 
@@ -192,7 +194,7 @@ def getTextAreaData():
 
 # **** Working for Files Input Functionality****
 
-def selectFileFromPC():
+def selectAnalysisFileFromPC():
     Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
     filePath = askopenfilename(initialdir="/", title="Select file",
                                filetypes=(("txt files", "*.txt"), ("xml files", "*.xml"),
@@ -200,6 +202,18 @@ def selectFileFromPC():
     filename = os.path.basename(filePath)
     lblFileLabel.configure(text="Filename:\n" + filename)
     if ".xml" in filename:
+        callingXMLWork(filePath)
+    elif ".txt" in filename:
+        callingTextWork(filePath)
+
+
+def selectCorpusFileFromPC():
+    Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
+    filePath = askopenfilename(initialdir="/", title="Select file",
+                               filetypes=(("txt files", "*.txt"), ("pdf files", "*.pdf")))
+    filename = os.path.basename(filePath)
+    c_lblFileLabel.configure(text="Filename:\t" + filename)
+    if ".pdf" in filename:
         callingXMLWork(filePath)
     elif ".txt" in filename:
         callingTextWork(filePath)
@@ -225,11 +239,11 @@ def callingTextWork(file_path):
     txtAnalysisArea.insert(0.0, line)
 
 
-# **** For Main NLP Tab1 ****
+# **** For Main NLP ANALYSIS_TAB ****
 
-l1 = Label(tab_analysis, text="Text for Analysis", padx=10, pady=10, bg='#ffffff')
+l1 = Label(tab_analysis, text="Text for Analysis", padx=20, pady=20, bg='#ffffff')
 l1.grid(row=1, column=0)
-l2 = Label(tab_analysis, text="Analysis Result\nScroll it through trackball", padx=10, pady=10, bg='#ffffff')
+l2 = Label(tab_analysis, text="Analysis Result\nScroll it through trackball", padx=20, pady=20, bg='#ffffff')
 l2.grid(row=6, column=0)
 
 # raw_text_entry = StringVar()
@@ -241,10 +255,9 @@ lblFileLabel.grid(row=1, column=3)
 
 # For Adding Open Directory Buttons
 btnOpenDirectory = Button(tab_analysis, text='Open Directory', width=18, bg='skyblue', fg='#FFF',
-                          command=selectFileFromPC)  # bg: background color, fg: fore ground color
+                          command=selectAnalysisFileFromPC)  # bg: background color, fg: fore ground color
 btnOpenDirectory.grid(row=1, column=2, padx=10, pady=10)
 
-# For Adding Buttons in Tab1
 btnToken = Button(tab_analysis, text='Tokenize', width=18, bg='skyblue', fg='#FFF',
                   command=run_tokenize)  # bg: background color, fg: fore ground color
 btnToken.grid(row=4, column=0, padx=10, pady=10)
@@ -271,13 +284,34 @@ btnClear.grid(row=5, column=2, padx=10, pady=10)
 
 # **** For Display Results on screen ****
 txtResultDisplay = ScrolledText(tab_analysis, height=25)
-txtResultDisplay.grid(row=6, column=0, columnspan=3, padx=10, pady=10)
+txtResultDisplay.grid(row=6, column=1, padx=10, pady=10)
 txtResultDisplay.config(state=DISABLED)
 
-
-# **** End Main NLP Tab1 ****
+# **** End Main NLP ANALYSIS_TAB ****
 
 # **** For Main NLP Tab2 ****
+c_l1 = Label(tab_corpus, text="Select file for Corpus", padx=20, pady=20, bg='#ffffff')
+c_l1.grid(row=1, column=0)
+c_l2 = Label(tab_corpus, text="Analysis Result\nScroll it through trackball", padx=20, pady=20, bg='#ffffff')
+c_l2.grid(row=6, column=0)
+
+c_lblFileLabel = Label(tab_corpus, text="Filename:", padx=0, pady=5, fg='white', bg="lightgray", width=80)
+c_lblFileLabel.grid(row=1, column=1)
+
+# For Adding Open File Button
+c_btnOpenDirectory = Button(tab_corpus, text='Select File', width=18, bg='skyblue', fg='#FFF',
+                            command=selectCorpusFileFromPC)
+c_btnOpenDirectory.grid(row=1, column=2, padx=10, pady=10)
+
+# For Adding Save Corpus Button
+c_btnOpenDirectory = Button(tab_corpus, text='Save in Corpus', width=18, bg='black', fg='white',
+                            command=selectCorpusFileFromPC)
+c_btnOpenDirectory.grid(row=6, column=2, padx=10, pady=10)
+
+# **** For Display wordlist on box ****
+c_txtResultDisplay = ScrolledText(tab_corpus, height=25, width=80)
+c_txtResultDisplay.grid(row=6, column=1, padx=10, pady=10)
+c_txtResultDisplay.config(state=DISABLED)
 
 
 # **** End Main NLP Tab2 ****
