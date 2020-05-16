@@ -23,27 +23,27 @@ window.title("NLP MINING")
 
 # **** For Tab Layout ****
 tab_control = ttk.Notebook(window)
-tab1 = ttk.Frame(tab_control)
-tab2 = ttk.Frame(tab_control)
-tab3 = ttk.Frame(tab_control)
+tab_analysis = ttk.Frame(tab_control)
+tab_corpus = ttk.Frame(tab_control)
+tab_about = ttk.Frame(tab_control)
 
 # **** For Adding Tabs to Notebook ****
-tab_control.add(tab3, text="About")
-tab_control.add(tab1, text="Text Analysis")
-tab_control.add(tab2, text="Processing Corpus")
+tab_control.add(tab_about, text="About")
+tab_control.add(tab_analysis, text="Text Analysis")
+tab_control.add(tab_corpus, text="Processing Corpus")
 tab_control.pack(expand=1, fill='both')  # For displaying Tabs
 
 # **** For NLPGUI Tab ****
-label1 = Label(tab1, text="NLP for Simple text", padx=5, pady=5)  # padx and pady is used for padding
+label1 = Label(tab_analysis, text="NLP for Simple text", padx=5, pady=5)  # padx and pady is used for padding
 label1.grid(row=0, column=0)
-label2 = Label(tab2, text="Processing of Corpus", padx=5, pady=5)
+label2 = Label(tab_corpus, text="Processing of Corpus", padx=5, pady=5)
 label2.grid(row=0, column=0)
-label3 = Label(tab3, text="NATURAL LANGUAGE PROCESSING TOOL\nDEVELOPED BY KASHMALA & ALI AZAZ", padx=5, pady=5,
+label3 = Label(tab_about, text="NATURAL LANGUAGE PROCESSING TOOL\nDEVELOPED BY KASHMALA & ALI AZAZ", padx=5, pady=5,
                font='Helvetica 18 bold')
 label3.grid(row=0, column=0)
 label3.pack(expand=True)
 # **** Progress Bar widget
-progressBar = Progressbar(tab1, orient=HORIZONTAL, mode='determinate', length=200)
+progressBar = Progressbar(tab_analysis, orient=HORIZONTAL, mode='determinate', length=200)
 progressBar.grid(column=1, row=0, sticky=W, padx=120, pady=10)
 
 
@@ -114,7 +114,6 @@ def get_stop_word_filter_text():
     raw_text = str(getTextAreaData())
     stop_words = set(stopwords.words("english"))
     new_text = nltk.word_tokenize(raw_text.lower())
-    filtered_txt = []
     filtered_txt = [w for w in new_text if w not in stop_words]
     symbols = "!\"#$%&()*+-./:;<=>?@[\]^_`{|}~\n"
     for i in symbols:
@@ -228,52 +227,60 @@ def callingTextWork(file_path):
 
 # **** For Main NLP Tab1 ****
 
-l1 = Label(tab1, text="Text for Analysis", padx=10, pady=10, bg='#ffffff')
+l1 = Label(tab_analysis, text="Text for Analysis", padx=10, pady=10, bg='#ffffff')
 l1.grid(row=1, column=0)
-l2 = Label(tab1, text="Analysis Result\nScroll it through trackball", padx=10, pady=10, bg='#ffffff')
+l2 = Label(tab_analysis, text="Analysis Result\nScroll it through trackball", padx=10, pady=10, bg='#ffffff')
 l2.grid(row=6, column=0)
 
 # raw_text_entry = StringVar()
-txtAnalysisArea = ScrolledText(tab1, height=6)
+txtAnalysisArea = ScrolledText(tab_analysis, height=6)
 txtAnalysisArea.grid(row=1, column=1)
 
-lblFileLabel = Label(tab1, text="", padx=0, pady=5, fg='darkblue')
+lblFileLabel = Label(tab_analysis, text="", padx=0, pady=5, fg='darkblue')
 lblFileLabel.grid(row=1, column=3)
 
 # For Adding Open Directory Buttons
-btnOpenDirectory = Button(tab1, text='Open Directory', width=18, bg='skyblue', fg='#FFF',
+btnOpenDirectory = Button(tab_analysis, text='Open Directory', width=18, bg='skyblue', fg='#FFF',
                           command=selectFileFromPC)  # bg: background color, fg: fore ground color
 btnOpenDirectory.grid(row=1, column=2, padx=10, pady=10)
 
 # For Adding Buttons in Tab1
-btnToken = Button(tab1, text='Tokenize', width=18, bg='skyblue', fg='#FFF',
+btnToken = Button(tab_analysis, text='Tokenize', width=18, bg='skyblue', fg='#FFF',
                   command=run_tokenize)  # bg: background color, fg: fore ground color
 btnToken.grid(row=4, column=0, padx=10, pady=10)
 
-btnPOSTagger = Button(tab1, text='POS Tagger', width=18, bg='skyblue', fg='#FFF',
+btnPOSTagger = Button(tab_analysis, text='POS Tagger', width=18, bg='skyblue', fg='#FFF',
                       command=run_pos_tags)  # bg: background color, fg: fore ground color
 btnPOSTagger.grid(row=4, column=1, padx=10, pady=10)
 
-bntStopWordRM = Button(tab1, text='Stopwords Removal', width=18, bg='skyblue', fg='#FFF',
+bntStopWordRM = Button(tab_analysis, text='Stopwords Removal', width=18, bg='skyblue', fg='#FFF',
                        command=run_stopwords_removal)  # bg: background color, fg: fore ground color
 bntStopWordRM.grid(row=4, column=2, padx=10, pady=10)
 
-btnLemma = Button(tab1, text='Lemmatization', width=18, bg='darkblue', fg='#FFF',
+btnLemma = Button(tab_analysis, text='Lemmatization', width=18, bg='darkblue', fg='#FFF',
                   command=run_lemmatize)  # bg: background color, fg: fore ground color
 btnLemma.grid(row=5, column=0, padx=10, pady=10)
 
-btnReset = Button(tab1, text='Reset', width=18, bg='darkblue', fg='#FFF',
+btnReset = Button(tab_analysis, text='Reset', width=18, bg='darkblue', fg='#FFF',
                   command=resetAllText)  # bg: background color, fg: fore ground color
 btnReset.grid(row=5, column=1, padx=10, pady=10)
 
-btnClear = Button(tab1, text='Clear Text', width=18, bg='darkblue', fg='#FFF',
+btnClear = Button(tab_analysis, text='Clear Text', width=18, bg='darkblue', fg='#FFF',
                   command=clearTextResultDisplayArea)  # bg: background color, fg: fore ground color
 btnClear.grid(row=5, column=2, padx=10, pady=10)
 
 # **** For Display Results on screen ****
-txtResultDisplay = ScrolledText(tab1, height=25)
+txtResultDisplay = ScrolledText(tab_analysis, height=25)
 txtResultDisplay.grid(row=6, column=0, columnspan=3, padx=10, pady=10)
 txtResultDisplay.config(state=DISABLED)
+
+
+# **** End Main NLP Tab1 ****
+
+# **** For Main NLP Tab2 ****
+
+
+# **** End Main NLP Tab2 ****
 
 
 # **** Full Screen Functionality ****
