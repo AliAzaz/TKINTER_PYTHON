@@ -42,7 +42,9 @@ label1 = Label(tab_analysis, text="NLP for Simple text", padx=5, pady=5)  # padx
 label1.grid(row=0, column=0)
 label2 = Label(tab_corpus, text="Processing of Corpus", padx=20, pady=10)
 label2.grid(row=0, column=0)
-label3 = Label(tab_about, text="NATURAL LANGUAGE PROCESSING TOOL\nDEVELOPED BY KASHMALA & ALI AZAZ", padx=5, pady=5,
+label3 = Label(tab_about,
+               text="NATURAL LANGUAGE PROCESSING TOOL\nDEVELOPED BY: \nKASHMALA JAMSHAID \nAND \nALI AZAZ ALAM", padx=5,
+               pady=5,
                font='Helvetica 18 bold')
 label3.grid(row=0, column=0)
 label3.pack(expand=True)
@@ -318,9 +320,9 @@ def callingPDFWork(file_path):
 l1 = Label(tab_analysis, text="Text for Analysis", padx=20, pady=20, bg='#ffffff')
 l1.grid(row=1, column=0)
 l2 = Label(tab_analysis, text="Analysis Result\nScroll it through trackball", padx=20, pady=20, bg='#ffffff')
-l2.grid(row=7, column=0)
+l2.grid(row=6, column=0)
 lblAction = Label(tab_analysis, text="No Action Selected", padx=0, pady=5, fg='black', font='Ariel 12')
-lblAction.grid(row=6, column=1)
+lblAction.grid(row=5, column=1)
 
 # raw_text_entry = StringVar()
 txtAnalysisArea = ScrolledText(tab_analysis, height=6)
@@ -330,37 +332,37 @@ lblFileLabel = Label(tab_analysis, text="", padx=0, pady=5, fg='darkblue')
 lblFileLabel.grid(row=1, column=3)
 
 # For Adding Open Directory Buttons
-btnOpenDirectory = Button(tab_analysis, text='Open Directory', width=18, bg='skyblue', fg='#FFF',
+btnOpenDirectory = Button(tab_analysis, text='Open Directory', width=18, bg='black', fg='white',
                           command=selectAnalysisFileFromPC)  # bg: background color, fg: fore ground color
 btnOpenDirectory.grid(row=1, column=2, padx=10, pady=10)
 
 btnToken = Button(tab_analysis, text='Tokenize', width=18, bg='skyblue', fg='#FFF',
                   command=run_tokenize)  # bg: background color, fg: fore ground color
-btnToken.grid(row=4, column=0, padx=10, pady=10)
+btnToken.grid(row=4, column=2, padx=10, pady=10)
 
 btnPOSTagger = Button(tab_analysis, text='POS Tagger', width=18, bg='skyblue', fg='#FFF',
                       command=run_pos_tags)  # bg: background color, fg: fore ground color
-btnPOSTagger.grid(row=4, column=1, padx=10, pady=10)
+btnPOSTagger.grid(row=4, column=3, padx=10, pady=10)
 
 bntStopWordRM = Button(tab_analysis, text='Stopwords Removal', width=18, bg='skyblue', fg='#FFF',
                        command=run_stopwords_removal)  # bg: background color, fg: fore ground color
-bntStopWordRM.grid(row=4, column=2, padx=10, pady=10)
+bntStopWordRM.grid(row=5, column=2, padx=10, pady=10)
 
-btnLemma = Button(tab_analysis, text='Lemmatization', width=18, bg='darkblue', fg='#FFF',
+btnLemma = Button(tab_analysis, text='Lemmatization', width=18, bg='skyblue', fg='#FFF',
                   command=run_lemmatize)  # bg: background color, fg: fore ground color
-btnLemma.grid(row=5, column=0, padx=10, pady=10)
+btnLemma.grid(row=5, column=3, padx=10, pady=10)
 
 btnReset = Button(tab_analysis, text='Reset', width=18, bg='darkblue', fg='#FFF',
                   command=resetAllText)  # bg: background color, fg: fore ground color
-btnReset.grid(row=5, column=1, padx=10, pady=10)
+btnReset.grid(row=6, column=2, padx=10, pady=10)
 
 btnClear = Button(tab_analysis, text='Clear Text', width=18, bg='darkblue', fg='#FFF',
                   command=clearTextResultDisplayArea)  # bg: background color, fg: fore ground color
-btnClear.grid(row=5, column=2, padx=10, pady=10)
+btnClear.grid(row=6, column=3, padx=10, pady=10)
 
 # **** For Display Results on screen ****
 txtResultDisplay = ScrolledText(tab_analysis, height=25)
-txtResultDisplay.grid(row=7, column=1, padx=10, pady=0)
+txtResultDisplay.grid(row=6, column=1, padx=10, pady=0)
 txtResultDisplay.config(state=DISABLED)
 
 # **** End Main NLP ANALYSIS_TAB ****
