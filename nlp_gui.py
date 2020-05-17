@@ -48,7 +48,7 @@ label3.grid(row=0, column=0)
 label3.pack(expand=True)
 # **** Progress Bar widget
 analysisProgressBar = Progressbar(tab_analysis, orient=HORIZONTAL, mode='determinate', length=200)
-analysisProgressBar.grid(column=1, row=0, sticky=W, padx=120, pady=10)
+analysisProgressBar.grid(column=1, row=0, sticky=W, padx=250, pady=10)
 corpusProgressBar = Progressbar(tab_corpus, orient=HORIZONTAL, mode='determinate', length=200)
 corpusProgressBar.grid(column=1, row=0, sticky=W, padx=250, pady=10)
 
@@ -167,7 +167,8 @@ def run_tokenize():
         progressStarting(analysisProgressBar)
         raw_text = str(getTextAreaData())
         new_text = nltk.word_tokenize(raw_text.lower())
-        result = '\nTokens: {}'.format(new_text)
+        lblAction.config(text="Tokens")
+        result = '{}'.format("\n".join(new_text))
         # For inserting into Display
         txtInsertInResultTextArea(result)
 
@@ -180,7 +181,8 @@ def run_pos_tags():
         raw_text = str(getTextAreaData())
         new_text = nltk.word_tokenize(raw_text.lower())
         this_new_text = nltk.pos_tag(new_text)
-        result = '\nPOS tags: {}'.format(this_new_text)
+        lblAction.config(text="POS tags")
+        result = '{}'.format("\n".join(this_new_text))
         # For inserting into Display
         txtInsertInResultTextArea(result)
 
@@ -190,7 +192,8 @@ def run_stopwords_removal():
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
         progressStarting(analysisProgressBar)
-        result = '\nStopwords Removal: {}'.format(get_stop_word_filter_text())
+        lblAction.config(text="Stopwords Removal")
+        result = '{}'.format("\n".join(get_stop_word_filter_text()))
         # For inserting into Display
         txtInsertInResultTextArea(result)
 
@@ -203,7 +206,8 @@ def run_lemmatize():
         words = get_stop_word_filter_text()
         wnl = WordNetLemmatizer()
         lematized_text = [wnl.lemmatize(word, get_pos(word)) for word in words]
-        result = '\nLemmatiztion: {}'.format(lematized_text)
+        lblAction.config(text="Lemmatization")
+        result = '{}'.format("\n".join(lematized_text))
         # For inserting into Display
         txtInsertInResultTextArea(result)
 
@@ -214,12 +218,14 @@ def resetAllText():
     txtResultDisplay.delete(0.0, END)
     txtResultEnableDisable(FALSE)
     lblFileLabel.configure(text='')
+    lblAction.configure(text='No Action Selected')
 
 
 def clearTextResultDisplayArea():
     txtResultEnableDisable(TRUE)
     txtResultDisplay.delete(0.0, END)
     txtResultEnableDisable(FALSE)
+    lblAction.configure(text='No Action Selected')
 
 
 def run_save_corpus():
@@ -242,9 +248,9 @@ def selectAnalysisFileFromPC():
     filename = os.path.basename(filePath)
     lblFileLabel.configure(text="Filename:\n" + filename)
     if ".xml" in filename:
-        callingXMLWork(filePath)
+        threading.Thread(target=callingXMLWork(filePath, analysisProgressBar)).start()
     elif ".txt" in filename:
-        callingTextWork(filePath, 1)
+        threading.Thread(target=callingTextWork(filePath, 1, analysisProgressBar)).start()
 
 
 def selectCorpusFileFromPC():
@@ -256,10 +262,12 @@ def selectCorpusFileFromPC():
     if ".pdf" in filename:
         threading.Thread(target=callingPDFWork(filePath)).start()
     elif ".txt" in filename:
-        threading.Thread(target=callingTextWork(filePath, 2)).start()
+        threading.Thread(target=callingTextWork(filePath, 2, corpusProgressBar)).start()
 
 
-def callingXMLWork(file_path):
+def callingXMLWork(file_path, progress_bar):
+    progressStarting(progress_bar)
+    time.sleep(2)
     root = ET.parse(file_path).getroot()
     wordsList = []
     xmlParsing(wordsList, root.findall(root[1].tag))
@@ -268,8 +276,8 @@ def callingXMLWork(file_path):
     txtAnalysisArea.insert(0.0, listToString(wordsList))
 
 
-def callingTextWork(file_path, tab_type):
-    progressStarting(corpusProgressBar)
+def callingTextWork(file_path, tab_type, progress_bar):
+    progressStarting(progress_bar)
     time.sleep(2)
     # opening file
     root_file = open(file_path)
@@ -310,7 +318,9 @@ def callingPDFWork(file_path):
 l1 = Label(tab_analysis, text="Text for Analysis", padx=20, pady=20, bg='#ffffff')
 l1.grid(row=1, column=0)
 l2 = Label(tab_analysis, text="Analysis Result\nScroll it through trackball", padx=20, pady=20, bg='#ffffff')
-l2.grid(row=6, column=0)
+l2.grid(row=7, column=0)
+lblAction = Label(tab_analysis, text="No Action Selected", padx=0, pady=5, fg='black', font='Ariel 12')
+lblAction.grid(row=6, column=1)
 
 # raw_text_entry = StringVar()
 txtAnalysisArea = ScrolledText(tab_analysis, height=6)
@@ -350,7 +360,7 @@ btnClear.grid(row=5, column=2, padx=10, pady=10)
 
 # **** For Display Results on screen ****
 txtResultDisplay = ScrolledText(tab_analysis, height=25)
-txtResultDisplay.grid(row=6, column=1, padx=10, pady=10)
+txtResultDisplay.grid(row=7, column=1, padx=10, pady=0)
 txtResultDisplay.config(state=DISABLED)
 
 # **** End Main NLP ANALYSIS_TAB ****
@@ -358,11 +368,10 @@ txtResultDisplay.config(state=DISABLED)
 # **** For Main NLP Tab2 ****
 c_l1 = Label(tab_corpus, text="Select file for Corpus", padx=20, pady=20, bg='#ffffff')
 c_l1.grid(row=1, column=0)
-c_l2 = Label(tab_corpus, text="Extracted words from file\nScroll it through trackball", padx=20, pady=20, bg='#ffffff')
-c_l2.grid(row=6, column=0)
-
 c_lblFileLabel = Label(tab_corpus, text="Filename:", padx=0, pady=5, fg='white', bg="lightgray", width=80)
 c_lblFileLabel.grid(row=1, column=1)
+c_l2 = Label(tab_corpus, text="Extracted words from file\nScroll it through trackball", padx=20, pady=20, bg='#ffffff')
+c_l2.grid(row=6, column=0)
 
 # For Adding Open File Button
 c_btnOpenDirectory = Button(tab_corpus, text='Select File', width=18, bg='skyblue', fg='#FFF',
