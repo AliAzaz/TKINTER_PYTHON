@@ -16,10 +16,13 @@ from tkinter.ttk import Progressbar
 import PyPDF2
 import nltk
 import numpy as np
+# for TDIDF
+import pandas as pd
 from nltk import word_tokenize
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet  # To get words in dictionary with their parts of speech
 from nltk.stem import WordNetLemmatizer  # lemmatizes word based on it's parts of speech
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Note: tk or ttk has same functionality but the appearance is different
 window = Tk()
@@ -72,32 +75,24 @@ def xmlParsing(sublist, subroot):
         sublist.append(subroot.text)
 
 
-def txtResultEnableDisable(flag):
+def txtResultEnableDisable(txt_result_area, flag):
     if flag == TRUE:
-        txtResultDisplay.config(state=NORMAL)
+        txt_result_area.config(state=NORMAL)
     else:
-        txtResultDisplay.config(state=DISABLED)
+        txt_result_area.config(state=DISABLED)
 
 
-def txtCorpusResultEnableDisable(flag):
-    if flag == TRUE:
-        c_txtResultDisplay.config(state=NORMAL)
-    else:
-        c_txtResultDisplay.config(state=DISABLED)
-
-
-def txtInsertInResultTextArea(result):
-    txtResultEnableDisable(TRUE)
-    txtResultDisplay.delete(0.0, END)
-    txtResultDisplay.insert(tk.END, result)
-    txtResultEnableDisable(FALSE)
+def txtInsertInResultTextArea(txt_result_area, result):
+    txtResultEnableDisable(txt_result_area, TRUE)
+    txt_result_area.insert(tk.END, result)
+    txtResultEnableDisable(txt_result_area, FALSE)
 
 
 def txtInsertInCorpusResultTextArea(result):
-    txtCorpusResultEnableDisable(TRUE)
+    txtResultEnableDisable(c_txtResultDisplay, TRUE)
     c_txtResultDisplay.delete(0.0, END)
     c_txtResultDisplay.insert(tk.END, result)
-    txtCorpusResultEnableDisable(FALSE)
+    txtResultEnableDisable(c_txtResultDisplay, FALSE)
 
 
 def progress(current_value, progress_bar):
@@ -168,11 +163,14 @@ def run_tokenize():
     else:
         progressStarting(analysisProgressBar)
         raw_text = str(getTextAreaData())
+        with open("Textinput_file.txt", 'a') as f:
+            f.write(raw_text)
         new_text = nltk.word_tokenize(raw_text.lower())
-        lblAction.config(text="Tokens")
         result = '{}'.format("\n".join(new_text))
         # For inserting into Display
-        txtInsertInResultTextArea(result)
+        clearTextResultDisplayArea()
+        lblAction.config(text="Tokens")
+        txtInsertInResultTextArea(txtResultDisplay, result)
 
 
 def run_pos_tags():
@@ -183,10 +181,18 @@ def run_pos_tags():
         raw_text = str(getTextAreaData())
         new_text = nltk.word_tokenize(raw_text.lower())
         this_new_text = nltk.pos_tag(new_text)
-        lblAction.config(text="POS tags")
-        result = '{}'.format("\n".join(this_new_text))
+        list_first = []
+        list_second = []
+        i = 1
+        for items in this_new_text:
+            list_first.append(str(i) + ". " + items[0])
+            list_second.append(str(i) + ". " + items[1])
+            i += 1
         # For inserting into Display
-        txtInsertInResultTextArea(result)
+        clearTextResultDisplayArea()
+        lblAction.config(text="POS tags")
+        txtInsertInResultTextArea(txtResultDisplay, '{}'.format("\n".join(list_first)))
+        txtInsertInResultTextArea(txtResultDisplay_02, '{}'.format("\n".join(list_second)))
 
 
 def run_stopwords_removal():
@@ -194,10 +200,11 @@ def run_stopwords_removal():
         messagebox.showinfo("Error", "Analysis Text field is empty!!")
     else:
         progressStarting(analysisProgressBar)
-        lblAction.config(text="Stopwords Removal")
         result = '{}'.format("\n".join(get_stop_word_filter_text()))
         # For inserting into Display
-        txtInsertInResultTextArea(result)
+        clearTextResultDisplayArea()
+        lblAction.config(text="Stopwords Removal")
+        txtInsertInResultTextArea(txtResultDisplay, result)
 
 
 def run_lemmatize():
@@ -208,25 +215,26 @@ def run_lemmatize():
         words = get_stop_word_filter_text()
         wnl = WordNetLemmatizer()
         lematized_text = [wnl.lemmatize(word, get_pos(word)) for word in words]
-        lblAction.config(text="Lemmatization")
         result = '{}'.format("\n".join(lematized_text))
         # For inserting into Display
-        txtInsertInResultTextArea(result)
+        clearTextResultDisplayArea()
+        lblAction.config(text="Lemmatization")
+        txtInsertInResultTextArea(txtResultDisplay, result)
 
 
 def resetAllText():
     txtAnalysisArea.delete(0.0, END)
-    txtResultEnableDisable(TRUE)
-    txtResultDisplay.delete(0.0, END)
-    txtResultEnableDisable(FALSE)
+    clearTextResultDisplayArea()
     lblFileLabel.configure(text='')
-    lblAction.configure(text='No Action Selected')
 
 
 def clearTextResultDisplayArea():
-    txtResultEnableDisable(TRUE)
+    txtResultEnableDisable(txtResultDisplay, TRUE)
     txtResultDisplay.delete(0.0, END)
-    txtResultEnableDisable(FALSE)
+    txtResultEnableDisable(txtResultDisplay, FALSE)
+    txtResultEnableDisable(txtResultDisplay_02, TRUE)
+    txtResultDisplay_02.delete(0.0, END)
+    txtResultEnableDisable(txtResultDisplay_02, FALSE)
     lblAction.configure(text='No Action Selected')
 
 
@@ -239,6 +247,64 @@ def run_save_corpus():
         file_name = c_lblFileLabel['text'].split(":")
         print(file_name)
         threading.Thread(target=writeFile(file_name[1], c_txtResultDisplay.get(0.0, tk.END))).start()
+
+
+def run_td_idf():
+    if txtAnalysisArea.compare("end-1c", "==", "1.0"):
+        messagebox.showinfo("Error", "Analysis Text field is empty!!")
+    else:
+        progressStarting(analysisProgressBar)
+        with open("Textinput_file.txt") as text_file:
+            documentA = text_file.read()
+        print(documentA)
+        vectorizer = TfidfVectorizer()
+        vectors = vectorizer.fit_transform([documentA])
+        feature_names = vectorizer.get_feature_names()
+        dense = vectors.todense()
+        denselist = dense.tolist()
+        df = pd.DataFrame(denselist, columns=feature_names)
+        print(df)
+        with open("TDtextfile.txt", 'a') as f:
+            f.write(df.to_string())
+        list_first = []
+        list_second = []
+        i = 1
+        for items in df.keys():
+            list_first.append(str(i) + ". " + items)
+            list_second.append(str(i) + ". " + str("%.4f" % round(df.loc[0, items], 4)))
+            i += 1
+        # For inserting into Display
+        clearTextResultDisplayArea()
+        lblAction.config(text="TD/IDF")
+        txtInsertInResultTextArea(txtResultDisplay, '{}'.format("\n".join(list_first)))
+        txtInsertInResultTextArea(txtResultDisplay_02, '{}'.format("\n".join(list_second)))
+
+
+def run_wordnet():
+    if txtAnalysisArea.compare("end-1c", "==", "1.0"):
+        messagebox.showinfo("Error", "Analysis Text field is empty!!")
+    else:
+        progressStarting(analysisProgressBar)
+        words = get_stop_word_filter_text()
+        wnl = WordNetLemmatizer()
+        lematized_text = [wnl.lemmatize(word, get_pos(word)) for word in words]
+        list_first = []
+        list_second = []
+        syn = list()
+        i = 1
+        for items in lematized_text:
+            list_first.append(str(i) + ". " + items)
+            for synset in wordnet.synsets(items):
+                for lemma in synset.lemmas():
+                    if lemma.name() not in syn:
+                        syn.append(lemma.name())  # add the synonyms
+                        list_second.append(str(i) + ". " + lemma.name())
+            i += 1
+        # For inserting into Display
+        clearTextResultDisplayArea()
+        lblAction.config(text="WORDNET SYNONYMS")
+        txtInsertInResultTextArea(txtResultDisplay, '{}'.format("\n".join(list_first)))
+        txtInsertInResultTextArea(txtResultDisplay_02, '{}'.format("\n".join(list_second)))
 
 
 # **** Working for Files Input Functionality****
@@ -328,42 +394,73 @@ lblAction.grid(row=5, column=1)
 txtAnalysisArea = ScrolledText(tab_analysis, height=6)
 txtAnalysisArea.grid(row=1, column=1)
 
-lblFileLabel = Label(tab_analysis, text="", padx=0, pady=5, fg='darkblue')
-lblFileLabel.grid(row=1, column=3)
+mainFrame = Frame(tab_analysis)
+mainFrame.grid(row=1, column=2, padx=10, pady=10)
+
+lblFileLabel = Label(mainFrame, text="", padx=0, pady=5, fg='darkblue')
+lblFileLabel.pack(side=BOTTOM)
 
 # For Adding Open Directory Buttons
-btnOpenDirectory = Button(tab_analysis, text='Open Directory', width=18, bg='black', fg='white',
+btnOpenDirectory = Button(mainFrame, text='Open Directory', width=18, bg='black', fg='white',
                           command=selectAnalysisFileFromPC)  # bg: background color, fg: fore ground color
-btnOpenDirectory.grid(row=1, column=2, padx=10, pady=10)
+btnOpenDirectory.pack(side=BOTTOM)
 
-btnToken = Button(tab_analysis, text='Tokenize', width=18, bg='skyblue', fg='#FFF',
+buttonFrame = Frame(tab_analysis)
+buttonFrame.grid(row=4, column=2, padx=10, pady=10)
+
+btnToken = Button(buttonFrame, text='Tokenize', width=18, bg='skyblue', fg='#FFF',
                   command=run_tokenize)  # bg: background color, fg: fore ground color
-btnToken.grid(row=4, column=2, padx=10, pady=10)
+btnToken.pack(side=LEFT)
 
-btnPOSTagger = Button(tab_analysis, text='POS Tagger', width=18, bg='skyblue', fg='#FFF',
+btnPOSTagger = Button(buttonFrame, text='POS Tagger', width=18, bg='skyblue', fg='#FFF',
                       command=run_pos_tags)  # bg: background color, fg: fore ground color
-btnPOSTagger.grid(row=4, column=3, padx=10, pady=10)
+btnPOSTagger.pack(side=RIGHT)
 
-bntStopWordRM = Button(tab_analysis, text='Stopwords Removal', width=18, bg='skyblue', fg='#FFF',
+bntStopWordRM = Button(buttonFrame, text='Stopwords Removal', width=18, bg='skyblue', fg='#FFF',
                        command=run_stopwords_removal)  # bg: background color, fg: fore ground color
-bntStopWordRM.grid(row=5, column=2, padx=10, pady=10)
+bntStopWordRM.pack(side=BOTTOM)
 
-btnLemma = Button(tab_analysis, text='Lemmatization', width=18, bg='skyblue', fg='#FFF',
+btnLemma = Button(buttonFrame, text='Lemmatization', width=18, bg='skyblue', fg='#FFF',
                   command=run_lemmatize)  # bg: background color, fg: fore ground color
-btnLemma.grid(row=5, column=3, padx=10, pady=10)
+btnLemma.pack(side=BOTTOM)
 
-btnReset = Button(tab_analysis, text='Reset', width=18, bg='darkblue', fg='#FFF',
+buttonFrame_02 = Frame(tab_analysis)
+buttonFrame_02.grid(row=5, column=2, padx=10, pady=10)
+
+btnTDIDF = Button(buttonFrame_02, text='TD/IDF', width=18, bg='skyblue', fg='#FFF',
+                  command=run_td_idf)  # bg: background color, fg: fore ground color
+btnTDIDF.pack(side=RIGHT)
+
+btnWordnet = Button(buttonFrame_02, text='WordNet API', width=18, bg='skyblue', fg='#FFF',
+                    command=run_wordnet)  # bg: background color, fg: fore ground color
+btnWordnet.pack(side=BOTTOM)
+
+# btnLemma = Button(buttonFrame_02, text='Compound Word', width=18, bg='skyblue',
+#                   fg='#FFF')  # bg: background color, fg: fore ground color
+# btnLemma.pack(side=BOTTOM)
+
+
+buttonFrame_03 = Frame(tab_analysis)
+buttonFrame_03.grid(row=6, column=2, padx=10, pady=10)
+
+btnReset = Button(buttonFrame_03, text='Reset', width=18, bg='darkblue', fg='#FFF',
                   command=resetAllText)  # bg: background color, fg: fore ground color
-btnReset.grid(row=6, column=2, padx=10, pady=10)
+btnReset.pack(side=RIGHT)
 
-btnClear = Button(tab_analysis, text='Clear Text', width=18, bg='darkblue', fg='#FFF',
+btnClear = Button(buttonFrame_03, text='Clear Text', width=18, bg='darkblue', fg='#FFF',
                   command=clearTextResultDisplayArea)  # bg: background color, fg: fore ground color
-btnClear.grid(row=6, column=3, padx=10, pady=10)
+btnClear.pack(side=LEFT)
 
 # **** For Display Results on screen ****
-txtResultDisplay = ScrolledText(tab_analysis, height=25)
-txtResultDisplay.grid(row=6, column=1, padx=10, pady=0)
+resultFrame = Frame(tab_analysis)
+resultFrame.grid(row=6, column=1, padx=10, pady=0)
+
+txtResultDisplay = ScrolledText(resultFrame, height=25, width=25)
+txtResultDisplay.pack(side=LEFT)
 txtResultDisplay.config(state=DISABLED)
+txtResultDisplay_02 = ScrolledText(resultFrame, height=25, width=25)
+txtResultDisplay_02.pack(side=RIGHT)
+txtResultDisplay_02.config(state=DISABLED)
 
 # **** End Main NLP ANALYSIS_TAB ****
 
