@@ -23,10 +23,16 @@ from nltk.corpus import stopwords
 from nltk.corpus import wordnet  # To get words in dictionary with their parts of speech
 from nltk.stem import WordNetLemmatizer  # lemmatizes word based on it's parts of speech
 from sklearn.feature_extraction.text import TfidfVectorizer
+# for Wiktionary
+from wiktionaryparser import WiktionaryParser
 
 # Note: tk or ttk has same functionality but the appearance is different
 window = Tk()
 window.title("NLP MINING")
+
+# Initializing Wiktionaryparser
+parser = WiktionaryParser()
+parser.exclude_part_of_speech('noun')
 
 # **** For Tab Layout ****
 tab_control = ttk.Notebook(window)
@@ -294,17 +300,38 @@ def run_wordnet():
         i = 1
         for items in lematized_text:
             list_first.append(str(i) + ". " + items)
+
+            # wordnet
             for synset in wordnet.synsets(items):
                 for lemma in synset.lemmas():
                     if lemma.name() not in syn:
                         syn.append(lemma.name())  # add the synonyms
-                        list_second.append(str(i) + ". " + lemma.name())
+                        list_second.append(str(i) + ". " + lemma.name() + "(wd)")
+
+            # wiktionary parser
+            # threading.Thread(target=run_wiktionary(list_second, items, i)).start()
+            word = parser.fetch(items)
+            for wik_items in word:
+                for subItems in wik_items['definitions']:
+                    for rWords in subItems['relatedWords']:
+                        for words in rWords['words']:
+                            list_second.append(str(i) + ". " + words + "(wik)")
+
             i += 1
         # For inserting into Display
         clearTextResultDisplayArea()
-        lblAction.config(text="WORDNET SYNONYMS")
+        lblAction.config(text="WIKTIONARY(wik) & WORDNET(wd) SYNONYMS")
         txtInsertInResultTextArea(txtResultDisplay, '{}'.format("\n".join(list_first)))
         txtInsertInResultTextArea(txtResultDisplay_02, '{}'.format("\n".join(list_second)))
+
+
+def run_wiktionary(list_second, items, i):
+    word = parser.fetch(items)
+    for wik_items in word:
+        for subItems in wik_items['definitions']:
+            for rWords in subItems['relatedWords']:
+                for words in rWords['words']:
+                    list_second.append(str(i) + ". " + words + "(wik)")
 
 
 # **** Working for Files Input Functionality****
@@ -431,7 +458,7 @@ btnTDIDF = Button(buttonFrame_02, text='TD/IDF', width=18, bg='skyblue', fg='#FF
                   command=run_td_idf)  # bg: background color, fg: fore ground color
 btnTDIDF.pack(side=RIGHT)
 
-btnWordnet = Button(buttonFrame_02, text='WordNet API', width=18, bg='skyblue', fg='#FFF',
+btnWordnet = Button(buttonFrame_02, text='Synonyms API', width=18, bg='skyblue', fg='#FFF',
                     command=run_wordnet)  # bg: background color, fg: fore ground color
 btnWordnet.pack(side=BOTTOM)
 
